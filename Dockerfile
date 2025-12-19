@@ -17,10 +17,7 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Build the application
-RUN npm run build
-
-# Remove devDependencies to reduce image size
-RUN npm prune --production
+RUN npx next build
 
 # Set environment
 ENV NODE_ENV=production
