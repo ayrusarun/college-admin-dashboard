@@ -11,7 +11,8 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format date to readable string
  */
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | undefined): string {
+  if (!date) return 'N/A';
   const d = new Date(date);
   return d.toLocaleDateString("en-US", {
     year: "numeric",
@@ -23,7 +24,8 @@ export function formatDate(date: string | Date): string {
 /**
  * Format date and time to readable string
  */
-export function formatDateTime(date: string | Date): string {
+export function formatDateTime(date: string | Date | undefined): string {
+  if (!date) return 'N/A';
   const d = new Date(date);
   return d.toLocaleString("en-US", {
     year: "numeric",
@@ -75,7 +77,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
