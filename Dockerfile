@@ -13,14 +13,14 @@ COPY package.json package-lock.json* ./
 # Install all dependencies (including devDependencies for build)
 RUN npm install --legacy-peer-deps
 
+# Verify next is installed
+RUN ls -la node_modules/next/package.json
+
 # Copy all source files
 COPY . .
 
-# Set Next.js to use current directory as root
-ENV TURBOPACK_ROOT=/app
-
-# Build the application
-RUN npx next build
+# Build the application with explicit directory
+RUN cd /app && NODE_ENV=production npx --yes next@16.1.0 build
 
 # Set environment
 ENV NODE_ENV=production
