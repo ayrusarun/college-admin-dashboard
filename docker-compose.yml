@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  # Frontend Admin Dashboard (Next.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NODE_ENV: production
+    mem_limit: 1g
+    cpus: 1.0
+    restart: unless-stopped
