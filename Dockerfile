@@ -2,11 +2,14 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
+# Install dependencies required for node-gyp
+RUN apk add --no-cache libc6-compat python3 make g++
+
 # Copy package files
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci --legacy-peer-deps
+RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; else npm install --legacy-peer-deps; fi
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -21,7 +24,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 # Build the application
-RUN npm run build
+RUN npx next build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
