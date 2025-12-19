@@ -1,55 +1,35 @@
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
+# Use Node.js 20 Alpine
+FROM node:20-alpine
+
+# Set working directory
 WORKDIR /app
 
-# Install dependencies required for node-gyp
-RUN apk add --no-cache libc6-compat python3 make g++
+# Install dependencies for native modules
+RUN apk add --no-cache libc6-compat
 
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; else npm install --legacy-peer-deps; fi
+# Install all dependencies (including devDependencies for build)
+RUN npm install --legacy-peer-deps
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-WORKDIR /app
-
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy all source files
 COPY . .
 
-# Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
 # Build the application
-RUN npx next build
+RUN npm run build
 
-# Stage 3: Runner
-FROM node:20-alpine AS runner
-WORKDIR /app
+# Remove devDependencies to reduce image size
+RUN npm prune --production
 
+# Set environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy all necessary files from builder
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/next.config.* ./
-
-USER nextjs
-
-EXPOSE 3000
-
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
+# Expose port
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "start"]
