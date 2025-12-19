@@ -10,11 +10,13 @@ RUN apk add --no-cache libc6-compat
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install all dependencies (including devDependencies for build)
-RUN npm install --legacy-peer-deps
+# Clean npm cache and install dependencies
+RUN npm cache clean --force
+RUN npm install --legacy-peer-deps --verbose
 
 # Verify next is installed
-RUN ls -la node_modules/next/package.json
+RUN ls -la node_modules/.bin/next || echo "Next binary not found"
+RUN test -f node_modules/next/package.json || (echo "Next.js not installed!" && exit 1)
 
 # Copy all source files
 COPY . .
