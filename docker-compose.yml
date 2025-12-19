@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://195.35.20.155:8000}
     ports:
       - "3000:3000"
     environment:
