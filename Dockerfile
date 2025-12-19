@@ -16,6 +16,9 @@ RUN npm install --legacy-peer-deps
 # Copy all source files
 COPY . .
 
+# Set Next.js to use current directory as root
+ENV TURBOPACK_ROOT=/app
+
 # Build the application
 RUN npx next build
 
