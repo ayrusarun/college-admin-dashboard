@@ -22,21 +22,21 @@ import {
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Users", href: "/dashboard/users", icon: Users },
-  { name: "Departments", href: "/dashboard/departments", icon: Building2 },
-  { name: "Academic", href: "/dashboard/academic", icon: GraduationCap },
-  { name: "Posts", href: "/dashboard/posts", icon: FileText },
-  { name: "Events", href: "/dashboard/events", icon: Calendar },
-  { name: "Groups", href: "/dashboard/groups", icon: UsersRound },
-  { name: "Files", href: "/dashboard/files", icon: FolderOpen },
-  { name: "Rewards", href: "/dashboard/rewards", icon: Gift },
-  { name: "Store", href: "/dashboard/store", icon: ShoppingCart },
-  { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
-  { name: "News", href: "/dashboard/news", icon: Newspaper },
-  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Moderation", href: "/dashboard/moderation", icon: Shield },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, implemented: true },
+  { name: "Users", href: "/dashboard/users", icon: Users, implemented: true },
+  { name: "Departments", href: "/dashboard/departments", icon: Building2, implemented: true },
+  { name: "Academic", href: "/dashboard/academic", icon: GraduationCap, implemented: true },
+  { name: "Posts", href: "/dashboard/posts", icon: FileText, implemented: true },
+  { name: "Events", href: "/dashboard/events", icon: Calendar, implemented: true },
+  { name: "Groups", href: "/dashboard/groups", icon: UsersRound, implemented: true },
+  { name: "Files", href: "/dashboard/files", icon: FolderOpen, implemented: false },
+  { name: "Rewards", href: "/dashboard/rewards", icon: Gift, implemented: false },
+  { name: "Store", href: "/dashboard/store", icon: ShoppingCart, implemented: false },
+  { name: "Alerts", href: "/dashboard/alerts", icon: Bell, implemented: true },
+  { name: "News", href: "/dashboard/news", icon: Newspaper, implemented: false },
+  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3, implemented: false },
+  { name: "Moderation", href: "/dashboard/moderation", icon: Shield, implemented: false },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings, implemented: false },
 ];
 
 export function Sidebar() {
@@ -60,10 +60,11 @@ export function Sidebar() {
             return (
               <li key={item.name}>
                 <Link
-                  href={item.href}
+                  href={item.implemented ? item.href : "#"}
                   className={cn(
                     "flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive
+                    !item.implemented && "opacity-40 blur-[0.5px] cursor-not-allowed pointer-events-none",
+                    isActive && item.implemented
                       ? "bg-blue-600 text-white"
                       : "text-gray-300 hover:bg-gray-800 hover:text-white"
                   )}

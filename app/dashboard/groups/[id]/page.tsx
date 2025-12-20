@@ -15,9 +15,10 @@ import {
   Crown,
   Settings,
   UserMinus,
+  Bell,
 } from "lucide-react";
-import { groupApi, userApi } from "@/lib/api/client";
-import { GroupWithMembers, MemberInfo, GroupRole, User } from "@/lib/types";
+import { groupApi, userApi, alertApi } from "@/lib/api/client";
+import { GroupWithMembers, MemberInfo, GroupRole, User, AlertType } from "@/lib/types";
 import { Modal } from "@/components/Modal";
 
 export default function GroupDetailPage() {
@@ -30,12 +31,19 @@ export default function GroupDetailPage() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showEditRoleModal, setShowEditRoleModal] = useState(false);
   const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberInfo | null>(null);
   const [searchUsers, setSearchUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<GroupRole>("MEMBER");
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [searchingUsers, setSearchingUsers] = useState(false);
+  const [alertFormData, setAlertFormData] = useState({
+    title: "",
+    message: "",
+    alert_type: AlertType.ANNOUNCEMENT,
+    expires_at: "",
+  });
 
   useEffect(() => {
     loadGroupDetails();
@@ -138,6 +146,34 @@ export default function GroupDetailPage() {
     } catch (error) {
       console.error("Failed to remove member:", error);
       alert("Failed to remove member. Please try again.");
+    }
+  };
+
+  const handleSendAlert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!group) return;
+
+    try {
+      await alertApi.createGroupAlert({
+        title: alertFormData.title,
+        message: alertFormData.message,
+        alert_type: alertFormData.alert_type,
+        expires_at: alertFormData.expires_at || undefined,
+        target_group_id: groupId,
+      });
+      
+      setShowAlertModal(false);
+      setAlertFormData({
+        title: "",
+        message: "",
+        alert_type: AlertType.ANNOUNCEMENT,
+        expires_at: "",
+      });
+      
+      alert(`Alert sent successfully to all ${group.member_count || 0} group members!`);
+    } catch (error: any) {
+      console.error("Failed to send group alert:", error);
+      alert(`Failed to send alert: ${error.message || "Unknown error"}`);
     }
   };
 
@@ -273,13 +309,22 @@ export default function GroupDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               {canManageMembers && (
-                <button
-                  onClick={() => setShowAddMemberModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  Add Member
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowAlertModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <Bell className="w-5 h-5" />
+                    Send Alert
+                  </button>
+                  <button
+                    onClick={() => setShowAddMemberModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    Add Member
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -586,6 +631,122 @@ export default function GroupDetailPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Send Alert Modal */}
+      <Modal
+        isOpen={showAlertModal}
+        onClose={() => {
+          setShowAlertModal(false);
+          setAlertFormData({
+            title: "",
+            message: "",
+            alert_type: AlertType.ANNOUNCEMENT,
+            expires_at: "",
+          });
+        }}
+        title={`Send Alert to Group (${group?.member_count || 0} members)`}
+      >
+        <form onSubmit={handleSendAlert} className="space-y-4">
+          <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
+            This alert will be sent to all {group?.member_count || 0} members of this group.
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Alert Title *
+            </label>
+            <input
+              type="text"
+              value={alertFormData.title}
+              onChange={(e) =>
+                setAlertFormData({ ...alertFormData, title: e.target.value })
+              }
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="e.g., Important Group Announcement"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Message *
+            </label>
+            <textarea
+              value={alertFormData.message}
+              onChange={(e) =>
+                setAlertFormData({ ...alertFormData, message: e.target.value })
+              }
+              required
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter your message here..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Alert Type
+            </label>
+            <select
+              value={alertFormData.alert_type}
+              onChange={(e) =>
+                setAlertFormData({
+                  ...alertFormData,
+                  alert_type: e.target.value as AlertType,
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {Object.values(AlertType).map((type) => (
+                <option key={type} value={type}>
+                  {type.replace(/_/g, " ")}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Expiration Date (Optional)
+            </label>
+            <input
+              type="datetime-local"
+              value={alertFormData.expires_at}
+              onChange={(e) =>
+                setAlertFormData({ ...alertFormData, expires_at: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty for no expiration
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAlertModal(false);
+                setAlertFormData({
+                  title: "",
+                  message: "",
+                  alert_type: AlertType.ANNOUNCEMENT,
+                  expires_at: "",
+                });
+              }}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Send Alert to {group?.member_count || 0} Members
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

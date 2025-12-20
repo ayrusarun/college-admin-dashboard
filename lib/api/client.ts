@@ -310,3 +310,70 @@ export const adminApi = {
   listAllPermissions: () => apiClient.get("/admin/permissions"),
   listRoles: () => apiClient.get("/admin/roles"),
 };
+
+// ==================== ALERT API ====================
+export const alertApi = {
+  // Get user alerts with optional filters
+  getUserAlerts: (params?: {
+    skip?: number;
+    limit?: number;
+    alert_type?: string;
+    is_read?: boolean;
+    include_expired?: boolean;
+  }) => apiClient.get("/alerts/", { params }),
+
+  // Create a new alert
+  createAlert: (data: {
+    title: string;
+    message: string;
+    alert_type?: string;
+    expires_at?: string;
+    post_id?: number;
+    target_group_id?: number;
+    user_id?: number;
+  }) => apiClient.post("/alerts/", data),
+
+  // Update an existing alert
+  updateAlert: (
+    alertId: number,
+    data: {
+      title?: string;
+      message?: string;
+      alert_type?: string;
+      is_enabled?: boolean;
+      is_read?: boolean;
+      expires_at?: string;
+    }
+  ) => apiClient.put(`/alerts/${alertId}`, data),
+
+  // Delete an alert
+  deleteAlert: (alertId: number) => apiClient.delete(`/alerts/${alertId}`),
+
+  // Mark all alerts as read
+  markAllRead: () => apiClient.post("/alerts/mark-all-read"),
+
+  // Get unread alert count
+  getUnreadCount: () => apiClient.get("/alerts/unread-count"),
+
+  // Create group alert (broadcast to all members)
+  createGroupAlert: (data: {
+    title: string;
+    message: string;
+    alert_type?: string;
+    expires_at?: string;
+    post_id?: number;
+    target_group_id: number;
+  }) => apiClient.post("/alerts/group-alerts", data),
+
+  // Create post alert
+  createPostAlert: (
+    postId: number,
+    data: {
+      user_id: number;
+      title: string;
+      message: string;
+      alert_type?: string;
+      expires_at?: string;
+    }
+  ) => apiClient.post(`/alerts/post-alerts/${postId}`, data),
+};

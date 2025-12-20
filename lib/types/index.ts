@@ -350,6 +350,88 @@ export interface PaginatedResponse<T> {
   pages: number;
 }
 
+// ==================== ALERT TYPES ====================
+export enum AlertType {
+  EVENT_NOTIFICATION = "EVENT_NOTIFICATION",
+  FEE_REMINDER = "FEE_REMINDER",
+  ANNOUNCEMENT = "ANNOUNCEMENT",
+  DEADLINE_REMINDER = "DEADLINE_REMINDER",
+  ACADEMIC_UPDATE = "ACADEMIC_UPDATE",
+  SYSTEM_NOTIFICATION = "SYSTEM_NOTIFICATION",
+  GENERAL = "GENERAL"
+}
+
+export interface AlertCreate {
+  title: string;
+  message: string;
+  alert_type?: AlertType;
+  expires_at?: string;
+  post_id?: number;
+  target_group_id?: number;
+  user_id?: number;
+}
+
+export interface AlertUpdate {
+  title?: string;
+  message?: string;
+  alert_type?: AlertType;
+  is_enabled?: boolean;
+  is_read?: boolean;
+  expires_at?: string;
+}
+
+export interface AlertResponse {
+  id: number;
+  title: string;
+  message: string;
+  alert_type: AlertType;
+  expires_at?: string;
+  post_id?: number;
+  target_group_id?: number;
+  user_id: number;
+  is_enabled: boolean;
+  is_read: boolean;
+  college_id: number;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  creator_name: string;
+  target_group_name?: string;
+  target_group_type?: string;
+  post_title?: string;
+  time_ago: string;
+  is_expired: boolean;
+}
+
+export interface AlertListResponse {
+  alerts: AlertResponse[];
+  total_count: number;
+  unread_count: number;
+  page: number;
+  page_size: number;
+}
+
+export interface GroupAlertCreate {
+  title: string;
+  message: string;
+  alert_type?: AlertType;
+  expires_at?: string;
+  post_id?: number;
+  target_group_id: number;
+}
+
+export interface PostAlertCreate {
+  user_id: number;
+  title: string;
+  message: string;
+  alert_type?: AlertType;
+  expires_at?: string;
+}
+
+export interface UnreadCountResponse {
+  unread_count: number;
+}
+
 // ==================== API RESPONSE ====================
 export interface ApiResponse<T = any> {
   data?: T;
