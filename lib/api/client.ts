@@ -377,3 +377,17 @@ export const alertApi = {
     }
   ) => apiClient.post(`/alerts/post-alerts/${postId}`, data),
 };
+
+// ==================== AI API ====================
+export const aiApi = {
+  // Ask AI a question
+  ask: (question: string, context?: string) =>
+    apiClient.post("/ai/ask", { question, context }),
+
+  // Search using AI
+  search: (query: string, filters?: any) =>
+    apiClient.post("/ai/search", { query, ...filters }),
+
+  // Get AI stats
+  getStats: () => apiClient.get("/ai/stats"),
+};

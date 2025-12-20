@@ -10,15 +10,36 @@ import {
   TrendingUp,
   Activity,
   Award,
+  UsersRound,
 } from "lucide-react";
-import { userApi, departmentApi, postApi, eventApi } from "@/lib/api/client";
+import { userApi, departmentApi, postApi, eventApi, groupApi } from "@/lib/api/client";
 import { formatNumber } from "@/lib/utils";
+import { format } from "date-fns";
+import Link from "next/link";
 
 interface Stats {
   total_users: number;
   total_departments: number;
   total_posts: number;
   total_events: number;
+  total_groups: number;
+}
+
+interface RecentUser {
+  id: number;
+  username: string;
+  full_name: string;
+  role: string;
+  created_at: string;
+}
+
+interface UpcomingEvent {
+  id: number;
+  title: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  status: string;
 }
 
 export default function DashboardPage() {
@@ -27,31 +48,54 @@ export default function DashboardPage() {
     total_departments: 0,
     total_posts: 0,
     total_events: 0,
+    total_groups: 0,
   });
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    loadDashboardData();
   }, []);
 
-  const loadStats = async () => {
+  const loadDashboardData = async () => {
     try {
-      // Fetch stats from various endpoints
-      const [usersRes, deptsRes, postsRes, eventsRes] = await Promise.all([
-        userApi.getUsers({ limit: 1 }),
-        departmentApi.list({ limit: 1 }),
-        postApi.list({ limit: 1 }),
-        eventApi.list({ limit: 1 }),
+      // Fetch counts and recent data from various endpoints
+      const [usersRes, deptsRes, postsRes, eventsRes, groupsRes] = await Promise.all([
+        userApi.getUsers({ limit: 1000 }), // Get all users to count
+        departmentApi.list({ limit: 1000 }), // Get all departments
+        postApi.list({ limit: 1000 }), // Get all posts
+        eventApi.list({ limit: 1000 }), // Get all events
+        groupApi.list({ limit: 1000 }), // Get all groups
       ]);
 
+      // Set counts
       setStats({
         total_users: usersRes.data?.length || 0,
         total_departments: deptsRes.data?.length || 0,
         total_posts: postsRes.data?.length || 0,
         total_events: eventsRes.data?.length || 0,
+        total_groups: groupsRes.data?.length || 0,
       });
+
+      // Get 5 most recent users
+      const users = usersRes.data || [];
+      const sortedUsers = users
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5);
+      setRecentUsers(sortedUsers);
+
+      // Get upcoming events (next 5 events starting from now)
+      const events = eventsRes.data || [];
+      const now = new Date();
+      const upcoming = events
+        .filter((event: any) => new Date(event.start_time) >= now && event.status !== 'cancelled')
+        .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        .slice(0, 5);
+      setUpcomingEvents(upcoming);
+
     } catch (error) {
-      console.error("Failed to load stats:", error);
+      console.error("Failed to load dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -63,28 +107,35 @@ export default function DashboardPage() {
       value: formatNumber(stats.total_users),
       icon: Users,
       color: "bg-blue-500",
-      change: "+12%",
+      href: "/dashboard/users",
     },
     {
       name: "Departments",
       value: formatNumber(stats.total_departments),
       icon: Building2,
       color: "bg-green-500",
-      change: "+5%",
+      href: "/dashboard/departments",
     },
     {
-      name: "Total Posts",
+      name: "Posts",
       value: formatNumber(stats.total_posts),
       icon: FileText,
       color: "bg-purple-500",
-      change: "+18%",
+      href: "/dashboard/posts",
     },
     {
       name: "Events",
       value: formatNumber(stats.total_events),
       icon: Calendar,
       color: "bg-orange-500",
-      change: "+7%",
+      href: "/dashboard/events",
+    },
+    {
+      name: "Groups",
+      value: formatNumber(stats.total_groups),
+      icon: UsersRound,
+      color: "bg-indigo-500",
+      href: "/dashboard/groups",
     },
   ];
 
@@ -126,13 +177,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div
+            <Link
               key={stat.name}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              href={stat.href}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -142,16 +194,15 @@ export default function DashboardPage() {
                   <p className="text-3xl font-bold text-gray-900 mt-2">
                     {stat.value}
                   </p>
-                  <p className="text-sm text-green-600 mt-2 flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    {stat.change} from last month
+                  <p className="text-sm text-gray-500 mt-2">
+                    View all →
                   </p>
                 </div>
                 <div className={`${stat.color} p-3 rounded-lg`}>
                   <Icon className="h-8 w-8 text-white" />
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -162,18 +213,18 @@ export default function DashboardPage() {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
+          <Link href="/dashboard/users/create" className="flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
             <Users className="h-5 w-5 mr-2" />
             Create New User
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
+          </Link>
+          <Link href="/dashboard/departments" className="flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
             <Building2 className="h-5 w-5 mr-2" />
             Add Department
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
+          </Link>
+          <Link href="/dashboard/events/create" className="flex items-center justify-center px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
             <Calendar className="h-5 w-5 mr-2" />
             Create Event
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -181,27 +232,101 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-blue-600" />
-            Recent Activity
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+            <span className="flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-blue-600" />
+              Recent Users
+            </span>
+            <Link href="/dashboard/users" className="text-sm text-blue-600 hover:text-blue-800">
+              View all →
+            </Link>
           </h3>
           <div className="space-y-3">
-            <p className="text-sm text-gray-500 text-center py-8">
-              No recent activity to display
-            </p>
+            {recentUsers.length > 0 ? (
+              recentUsers.map((user) => (
+                <Link
+                  key={user.id}
+                  href={`/dashboard/users/${user.id}`}
+                  className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
+                      <p className="text-xs text-gray-500">@{user.username}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      user.role === 'admin' ? 'bg-red-100 text-red-800' :
+                      user.role === 'staff' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {user.role}
+                    </span>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {format(new Date(user.created_at), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-8">
+                No recent users to display
+              </p>
+            )}
           </div>
         </div>
 
         {/* Upcoming Events */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Calendar className="h-5 w-5 mr-2 text-orange-600" />
-            Upcoming Events
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+            <span className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2 text-orange-600" />
+              Upcoming Events
+            </span>
+            <Link href="/dashboard/events" className="text-sm text-orange-600 hover:text-orange-800">
+              View all →
+            </Link>
           </h3>
           <div className="space-y-3">
-            <p className="text-sm text-gray-500 text-center py-8">
-              No upcoming events
-            </p>
+            {upcomingEvents.length > 0 ? (
+              upcomingEvents.map((event) => (
+                <Link
+                  key={event.id}
+                  href={`/dashboard/events/${event.id}`}
+                  className="flex items-start justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                >
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {format(new Date(event.start_time), 'MMM d, yyyy h:mm a')}
+                      </p>
+                      {event.location && (
+                        <p className="text-xs text-gray-500 truncate">📍 {event.location}</p>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ml-2 flex-shrink-0 ${
+                    event.status === 'published' ? 'bg-green-100 text-green-800' :
+                    event.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {event.status}
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-8">
+                No upcoming events
+              </p>
+            )}
           </div>
         </div>
       </div>
