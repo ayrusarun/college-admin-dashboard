@@ -56,10 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userResponse = await authApi.getCurrentUser();
       const userData = userResponse.data;
 
-      // Check if user is admin
-      if (userData.role !== "admin") {
+      // Check if user is admin or staff
+      if (userData.role !== "admin" && userData.role !== "staff") {
         localStorage.removeItem("access_token");
-        throw new Error("Access denied. Only administrators can access this dashboard.");
+        throw new Error("Access denied. Only administrators and staff can access this dashboard.");
       }
 
       setUser(userData);
