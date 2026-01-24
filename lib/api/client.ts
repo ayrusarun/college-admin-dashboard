@@ -72,14 +72,16 @@ export const userApi = {
     cohort_id?: number;
     class_id?: number;
     role?: string;
-  }) => apiClient.get("/users/", { params }),
+  }) => apiClient.get("/admin/users", { params }),
 
   getUserById: (userId: number) => apiClient.get(`/users/${userId}`),
 
-  createUser: (data: any) => apiClient.post("/users/", data),
+  createUser: (data: any) => apiClient.post("/admin/users", data),
 
   updateUser: (userId: number, data: any) =>
-    apiClient.put(`/users/${userId}`, data),
+    apiClient.put(`/admin/users/${userId}`, data),
+
+  deleteUser: (userId: number) => apiClient.delete(`/admin/users/${userId}`),
 };
 
 // ==================== DEPARTMENT API ====================

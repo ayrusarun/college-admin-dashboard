@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { userApi, departmentApi, academicApi } from "@/lib/api/client";
-import { Department, Program, Cohort, Class } from "@/lib/types";
+import type { Department, Program, Cohort, Class } from "@/lib/types/index";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -92,24 +94,53 @@ export default function CreateUserPage() {
     setLoading(true);
 
     try {
+      // Validate department is selected
+      if (!formData.department_id) {
+        setError("Please select a department");
+        setLoading(false);
+        return;
+      }
+
+      // Debug: Log current user to see what we have
+      console.log("Current user object:", currentUser);
+
+      // Get college_id from current user (either flat field or nested object)
+      const collegeId = currentUser?.college_id || currentUser?.college?.id;
+      
+      console.log("Extracted college_id:", collegeId);
+      
+      if (!collegeId) {
+        setError("Unable to determine your college. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
       const payload: any = {
         username: formData.username,
         email: formData.email,
         password: formData.password,
         full_name: formData.full_name,
         role: formData.role,
+        department_id: parseInt(formData.department_id),
+        college_id: collegeId, // ✅ Use extracted college_id
       };
 
-      // Add academic details for students/teachers
+      // Add academic details for students/teachers (optional)
       if (formData.role === "student" || formData.role === "teacher") {
-        if (formData.department_id)
-          payload.department_id = parseInt(formData.department_id);
         if (formData.program_id)
           payload.program_id = parseInt(formData.program_id);
         if (formData.cohort_id)
           payload.cohort_id = parseInt(formData.cohort_id);
         if (formData.class_id)
           payload.class_id = parseInt(formData.class_id);
+        
+        // Get admission year from cohort if selected
+        if (formData.cohort_id) {
+          const cohort = cohorts.find(c => c.id === parseInt(formData.cohort_id));
+          if (cohort?.admission_year) {
+            payload.admission_year = cohort.admission_year;
+          }
+        }
       }
 
       await userApi.createUser(payload);
@@ -118,9 +149,23 @@ export default function CreateUserPage() {
         router.push("/dashboard/users");
       }, 1500);
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || "Failed to create user. Please try again."
-      );
+      console.error("User creation error:", err);
+      
+      // Handle validation errors (422)
+      if (err.response?.status === 422 && err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          // Pydantic validation errors
+          const errors = detail.map((e: any) => `${e.loc.join('.')}: ${e.msg}`).join(', ');
+          setError(`Validation error: ${errors}`);
+        } else {
+          setError(detail);
+        }
+      } else {
+        setError(
+          err.response?.data?.detail || "Failed to create user. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -251,33 +296,48 @@ export default function CreateUserPage() {
           </div>
         </div>
 
-        {/* Academic Information */}
+        {/* Department Selection (Required for all roles) */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Department Assignment *
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department *
+              </label>
+              <select
+                required
+                value={formData.department_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, department_id: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select Department</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                {formData.role === 'student' || formData.role === 'teacher' 
+                  ? 'Select the academic department'
+                  : 'Select the administrative department this user belongs to'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Academic Information (Only for Students and Teachers) */}
         {(formData.role === "student" || formData.role === "teacher") && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Academic Information
+              <span className="text-sm font-normal text-gray-500 ml-2">(Optional)</span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <select
-                  value={formData.department_id}
-                  onChange={(e) =>
-                    setFormData({ ...formData, department_id: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Program
