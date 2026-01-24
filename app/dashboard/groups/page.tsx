@@ -18,6 +18,7 @@ import {
 import { groupApi } from "@/lib/api/client";
 import { Group, GroupType } from "@/lib/types";
 import { Modal } from "@/components/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function GroupsPage() {
   const router = useRouter();
@@ -502,39 +503,20 @@ export default function GroupsPage() {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
         isOpen={showDeleteModal}
         onClose={() => {
           setShowDeleteModal(false);
           setSelectedGroup(null);
         }}
-        title="Delete Group"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Are you sure you want to delete <strong>{selectedGroup?.name}</strong>? This
-            action cannot be undone.
-          </p>
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => {
-                setShowDeleteModal(false);
-                setSelectedGroup(null);
-              }}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDelete}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Delete Group
-            </button>
-          </div>
-        </div>
-      </Modal>
+        onConfirm={handleDelete}
+        title="Confirm Delete Group"
+        message={`Are you sure you want to delete <strong>${selectedGroup?.name || ''}</strong>? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

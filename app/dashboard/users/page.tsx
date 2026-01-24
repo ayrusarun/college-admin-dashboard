@@ -16,6 +16,7 @@ import { userApi, departmentApi, adminApi } from "@/lib/api/client";
 import { User, Department } from "@/lib/types";
 import { DataTable } from "@/components/ui/DataTable";
 import { formatDate, capitalize } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -25,6 +26,10 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [deletingUserName, setDeletingUserName] = useState<string>("");
   const [filters, setFilters] = useState({
     role: "",
     department_id: "",
@@ -57,13 +62,17 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: number, userName: string) => {
-    if (!confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteUser = (userId: number, userName: string) => {
+    setDeletingUserId(userId);
+    setDeletingUserName(userName);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deletingUserId) return;
 
     try {
-      await adminApi.deleteUser(userId);
+      await adminApi.deleteUser(deletingUserId);
       alert("User deleted successfully!");
       loadData(); // Refresh the list
     } catch (error: any) {
@@ -90,16 +99,15 @@ export default function UsersPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedUsers.size === 0) {
       alert("Please select users to delete");
       return;
     }
+    setShowBulkDeleteConfirm(true);
+  };
 
-    if (!confirm(`Are you sure you want to delete ${selectedUsers.size} user(s)? This action cannot be undone.`)) {
-      return;
-    }
-
+  const confirmBulkDelete = async () => {
     setIsDeleting(true);
     let successCount = 0;
     let failCount = 0;
@@ -369,6 +377,30 @@ export default function UsersPage() {
         data={filteredUsers}
         columns={columns}
         loading={loading}
+      />
+
+      {/* Delete Single User Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteUser}
+        title="Confirm Delete User"
+        message={`Are you sure you want to delete user <strong>${deletingUserName}</strong>? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        title="Confirm Bulk Delete"
+        message={`Are you sure you want to delete <strong>${selectedUsers.size}</strong> user(s)? This action cannot be undone.`}
+        confirmText="Delete All"
+        cancelText="Cancel"
+        variant="danger"
       />
     </div>
   );

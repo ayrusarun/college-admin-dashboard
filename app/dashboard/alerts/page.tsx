@@ -5,6 +5,7 @@ import { alertApi, groupApi, userApi } from "@/lib/api/client";
 import { AlertResponse, AlertType, AlertListResponse, Group, User as UserType } from "@/lib/types";
 import { Modal } from "@/components/Modal";
 import { Bell, Calendar, MessageSquare, Tag, Users, User, Sparkles, Search, X } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertResponse[]>([]);
@@ -25,6 +26,9 @@ export default function AlertsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<AlertResponse | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMarkAllReadConfirm, setShowMarkAllReadConfirm] = useState(false);
+  const [deletingAlertId, setDeletingAlertId] = useState<number | null>(null);
 
   // Groups data
   const [groups, setGroups] = useState<Group[]>([]);
@@ -148,9 +152,11 @@ export default function AlertsPage() {
     }
   };
 
-  const handleMarkAllRead = async () => {
-    if (!confirm(`Mark all ${unreadCount} unread alerts as read?`)) return;
-    
+  const handleMarkAllRead = () => {
+    setShowMarkAllReadConfirm(true);
+  };
+
+  const confirmMarkAllRead = async () => {
     try {
       await alertApi.markAllRead();
       fetchAlerts();
@@ -159,11 +165,16 @@ export default function AlertsPage() {
     }
   };
 
-  const handleDelete = async (alertId: number) => {
-    if (!confirm("Are you sure you want to delete this alert?")) return;
+  const handleDelete = (alertId: number) => {
+    setDeletingAlertId(alertId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingAlertId) return;
 
     try {
-      await alertApi.deleteAlert(alertId);
+      await alertApi.deleteAlert(deletingAlertId);
       fetchAlerts();
     } catch (err: any) {
       alert(`Failed to delete alert: ${err.message}`);
@@ -870,6 +881,30 @@ export default function AlertsPage() {
           </div>
         )}
       </Modal>
+
+      {/* Delete Alert Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Confirm Delete Alert"
+        message="Are you sure you want to delete this alert? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
+
+      {/* Mark All Read Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showMarkAllReadConfirm}
+        onClose={() => setShowMarkAllReadConfirm(false)}
+        onConfirm={confirmMarkAllRead}
+        title="Mark All as Read"
+        message={`Are you sure you want to mark all <strong>${unreadCount}</strong> unread alerts as read?`}
+        confirmText="Mark All Read"
+        cancelText="Cancel"
+        variant="warning"
+      />
     </div>
   );
 }

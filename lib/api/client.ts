@@ -72,7 +72,7 @@ export const userApi = {
     cohort_id?: number;
     class_id?: number;
     role?: string;
-  }) => apiClient.get("/admin/users", { params }),
+  }) => apiClient.get("/users/", { params }),
 
   getUserById: (userId: number) => apiClient.get(`/users/${userId}`),
 

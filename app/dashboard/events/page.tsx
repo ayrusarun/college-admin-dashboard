@@ -23,6 +23,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { eventApi } from "@/lib/api/client";
 import { Event } from "@/lib/types";
 import { capitalize } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const locales = {
   "en-US": enUS,
@@ -125,6 +126,9 @@ export default function EventsPage() {
   const [date, setDate] = useState(new Date());
   const [showListView, setShowListView] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [deletingEventTitle, setDeletingEventTitle] = useState<string>("");
 
   useEffect(() => {
     loadData();
@@ -143,13 +147,17 @@ export default function EventsPage() {
     }
   };
 
-  const handleDeleteEvent = async (eventId: number, eventTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteEvent = (eventId: number, eventTitle: string) => {
+    setDeletingEventId(eventId);
+    setDeletingEventTitle(eventTitle);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!deletingEventId) return;
 
     try {
-      await eventApi.delete(eventId);
+      await eventApi.delete(deletingEventId);
       alert("Event deleted successfully!");
       loadData();
       setSelectedEvent(null);
@@ -506,6 +514,18 @@ export default function EventsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteEvent}
+        title="Confirm Delete Event"
+        message={`Are you sure you want to delete <strong>${deletingEventTitle}</strong>? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

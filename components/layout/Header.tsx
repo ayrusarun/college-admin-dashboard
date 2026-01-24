@@ -11,6 +11,7 @@ export function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     // Fetch unread count initially
@@ -33,6 +34,19 @@ export function Header() {
 
   const handleNotificationClick = () => {
     router.push("/dashboard/alerts");
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    logout();
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   return (
@@ -83,7 +97,7 @@ export function Header() {
             </div>
 
             <button
-              onClick={logout}
+              onClick={handleLogoutClick}
               className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
               title="Logout"
             >
@@ -92,6 +106,37 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+              <LogOut className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Are you sure you want to logout? You will need to login again to access the dashboard.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
