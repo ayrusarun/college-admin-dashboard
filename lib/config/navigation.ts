@@ -14,10 +14,11 @@ import {
   Settings,
   Shield,
   BarChart3,
+  School,
   type LucideIcon,
 } from "lucide-react";
 
-export type UserRole = "admin" | "staff" | "student";
+export type UserRole = "admin" | "staff" | "student" | "super_admin";
 
 export interface NavigationItem {
   name: string;
@@ -38,15 +39,23 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both admin and staff can see dashboard
+    allowedRoles: ["admin", "staff", "super_admin"], // All admin types can see dashboard
     description: "Overview and statistics",
+  },
+  {
+    name: "Colleges",
+    href: "/dashboard/colleges",
+    icon: School,
+    implemented: true,
+    allowedRoles: ["super_admin"], // Only super admin can manage colleges
+    description: "Manage colleges (Super Admin only)",
   },
   {
     name: "Users",
     href: "/dashboard/users",
     icon: Users,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both can manage users
+    allowedRoles: ["admin", "staff", "super_admin"], // All can manage users
     description: "Manage users and profiles",
   },
   {
@@ -54,7 +63,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/departments",
     icon: Building2,
     implemented: true,
-    allowedRoles: ["admin"], // Only admin can manage departments
+    allowedRoles: ["admin", "super_admin"], // Admin and super admin can manage departments
     description: "Manage departments",
   },
   {
@@ -62,7 +71,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/academic",
     icon: GraduationCap,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both can access academic management
+    allowedRoles: ["admin", "staff", "super_admin"], // All can access academic management
     description: "Academic years, programs, cohorts",
   },
   {
@@ -70,7 +79,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/posts",
     icon: FileText,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both can manage posts
+    allowedRoles: ["admin", "staff", "super_admin"], // All can manage posts
     description: "Manage posts and announcements",
   },
   {
@@ -78,7 +87,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/events",
     icon: Calendar,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both can manage events
+    allowedRoles: ["admin", "staff", "super_admin"], // All can manage events
     description: "Create and manage events",
   },
   {
@@ -86,7 +95,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/groups",
     icon: UsersRound,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both can manage groups
+    allowedRoles: ["admin", "staff", "super_admin"], // All can manage groups
     description: "Manage user groups",
   },
   {
@@ -94,7 +103,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/files",
     icon: FolderOpen,
     implemented: false,
-    allowedRoles: ["admin"], // Only admin
+    allowedRoles: ["admin", "super_admin"], // Admin and super admin
     description: "File management system",
   },
   {
@@ -102,7 +111,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/rewards",
     icon: Gift,
     implemented: false,
-    allowedRoles: ["admin"], // Only admin
+    allowedRoles: ["admin", "super_admin"], // Admin and super admin
     description: "Rewards and points system",
   },
   {
@@ -110,7 +119,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/store",
     icon: ShoppingCart,
     implemented: false,
-    allowedRoles: ["admin"], // Only admin
+    allowedRoles: ["admin", "super_admin"], // Admin and super admin
     description: "Campus store management",
   },
   {
@@ -118,7 +127,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/alerts",
     icon: Bell,
     implemented: true,
-    allowedRoles: ["admin", "staff"], // Both can send alerts
+    allowedRoles: ["admin", "staff", "super_admin"], // All can send alerts
     description: "Send notifications and alerts",
   },
   {
@@ -126,7 +135,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/news",
     icon: Newspaper,
     implemented: false,
-    allowedRoles: ["admin", "staff"], // Both can manage news
+    allowedRoles: ["admin", "staff", "super_admin"], // All can manage news
     description: "News and updates",
   },
   {
@@ -134,7 +143,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/analytics",
     icon: BarChart3,
     implemented: false,
-    allowedRoles: ["admin"], // Only admin for analytics
+    allowedRoles: ["admin", "super_admin"], // Admin and super admin for analytics
     description: "Reports and analytics",
   },
   {
@@ -142,7 +151,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/moderation",
     icon: Shield,
     implemented: false,
-    allowedRoles: ["admin", "staff"], // Both can moderate
+    allowedRoles: ["admin", "staff", "super_admin"], // All can moderate
     description: "Content moderation",
   },
   {
@@ -150,7 +159,7 @@ export const navigationConfig: NavigationItem[] = [
     href: "/dashboard/settings",
     icon: Settings,
     implemented: false,
-    allowedRoles: ["admin"], // Only admin for settings
+    allowedRoles: ["admin", "super_admin"], // Admin and super admin for settings
     description: "System settings",
   },
 ];

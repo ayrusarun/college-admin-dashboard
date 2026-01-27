@@ -14,7 +14,7 @@ export interface User {
   username: string;
   email: string;
   full_name: string;
-  role: "admin" | "staff" | "student" | "teacher";
+  role: "admin" | "staff" | "student" | "teacher" | "super_admin";
   is_active: boolean;
   college?: {
     id: number;
@@ -430,6 +430,32 @@ export interface PostAlertCreate {
 
 export interface UnreadCountResponse {
   unread_count: number;
+}
+
+// ==================== COLLEGE TYPES (SUPER ADMIN) ====================
+export interface College {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CollegeCreate {
+  name: string;
+  slug: string;
+}
+
+export interface CollegeUpdate {
+  name?: string;
+  slug?: string;
+}
+
+export interface CollegeWithStats extends College {
+  user_count: number;
+  department_count: number;
+  post_count: number;
+  event_count: number;
 }
 
 // ==================== API RESPONSE ====================

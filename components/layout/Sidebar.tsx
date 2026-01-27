@@ -67,9 +67,10 @@ export function Sidebar() {
             <p className="text-xs text-center">
               <span className={cn(
                 "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                user.role === "super_admin" ? "bg-purple-900/50 text-purple-300" :
                 user.role === "admin" ? "bg-red-900/50 text-red-300" : "bg-blue-900/50 text-blue-300"
               )}>
-                {user.role.toUpperCase()} ACCESS
+                {user.role === "super_admin" ? "SUPER ADMIN" : user.role.toUpperCase()} ACCESS
               </span>
             </p>
           </div>

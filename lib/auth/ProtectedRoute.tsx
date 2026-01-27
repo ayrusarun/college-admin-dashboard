@@ -13,8 +13,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.role !== "admin" && user.role !== "staff") {
-        // Not an admin or staff - show error and logout
+      } else if (user.role !== "admin" && user.role !== "staff" && user.role !== "super_admin") {
+        // Not an admin, staff, or super_admin - show error and logout
         setTimeout(() => {
           logout();
         }, 3000);
@@ -37,8 +37,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  // Check if user is not an admin or staff
-  if (user.role !== "admin" && user.role !== "staff") {
+  // Check if user is not an admin, staff, or super_admin
+  if (user.role !== "admin" && user.role !== "staff" && user.role !== "super_admin") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">

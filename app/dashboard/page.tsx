@@ -11,11 +11,13 @@ import {
   Activity,
   Award,
   UsersRound,
+  School,
 } from "lucide-react";
-import { userApi, departmentApi, postApi, eventApi, groupApi } from "@/lib/api/client";
+import { userApi, departmentApi, postApi, eventApi, groupApi, collegeApi } from "@/lib/api/client";
 import { formatNumber } from "@/lib/utils";
 import { format } from "date-fns";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 interface Stats {
   total_users: number;
@@ -23,6 +25,7 @@ interface Stats {
   total_posts: number;
   total_events: number;
   total_groups: number;
+  total_colleges?: number; // For super admin
 }
 
 interface RecentUser {
@@ -43,12 +46,16 @@ interface UpcomingEvent {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+  
   const [stats, setStats] = useState<Stats>({
     total_users: 0,
     total_departments: 0,
     total_posts: 0,
     total_events: 0,
     total_groups: 0,
+    total_colleges: 0,
   });
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
@@ -61,13 +68,21 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       // Fetch counts and recent data from various endpoints
-      const [usersRes, deptsRes, postsRes, eventsRes, groupsRes] = await Promise.all([
+      const promises: any[] = [
         userApi.getUsers({ limit: 1000 }), // Get all users to count
         departmentApi.list({ limit: 1000 }), // Get all departments
         postApi.list({ limit: 1000 }), // Get all posts
         eventApi.list({ limit: 1000 }), // Get all events
         groupApi.list({ limit: 1000 }), // Get all groups
-      ]);
+      ];
+
+      // Super admin gets college data
+      if (isSuperAdmin) {
+        promises.push(collegeApi.list());
+      }
+
+      const results = await Promise.all(promises);
+      const [usersRes, deptsRes, postsRes, eventsRes, groupsRes, collegesRes] = results;
 
       // Set counts
       setStats({
@@ -76,6 +91,7 @@ export default function DashboardPage() {
         total_posts: postsRes.data?.length || 0,
         total_events: eventsRes.data?.length || 0,
         total_groups: groupsRes.data?.length || 0,
+        total_colleges: isSuperAdmin ? (collegesRes?.data?.length || 0) : undefined,
       });
 
       // Get 5 most recent users
@@ -102,6 +118,13 @@ export default function DashboardPage() {
   };
 
   const statCards = [
+    ...(isSuperAdmin ? [{
+      name: "Colleges",
+      value: formatNumber(stats.total_colleges || 0),
+      icon: School,
+      color: "bg-purple-500",
+      href: "/dashboard/colleges",
+    }] : []),
     {
       name: "Total Users",
       value: formatNumber(stats.total_users),
@@ -150,19 +173,32 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Multi-Tenancy Info Banner */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+      <div className={`border rounded-lg p-4 ${
+        isSuperAdmin 
+          ? "bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200" 
+          : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+      }`}>
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-blue-100">
-              <span className="text-xl">🏫</span>
+            <div className={`flex items-center justify-center h-10 w-10 rounded-full ${
+              isSuperAdmin ? "bg-purple-100" : "bg-blue-100"
+            }`}>
+              <span className="text-xl">{isSuperAdmin ? "👑" : "🏫"}</span>
             </div>
           </div>
           <div className="ml-3 flex-1">
-            <h3 className="text-sm font-medium text-blue-900">
-              Multi-Tenant Dashboard
+            <h3 className={`text-sm font-medium ${
+              isSuperAdmin ? "text-purple-900" : "text-blue-900"
+            }`}>
+              {isSuperAdmin ? "Super Admin Dashboard" : "Multi-Tenant Dashboard"}
             </h3>
-            <p className="mt-1 text-sm text-blue-700">
-              All data shown is scoped to your college. You can only view and manage users, posts, events, and content within your institution.
+            <p className={`mt-1 text-sm ${
+              isSuperAdmin ? "text-purple-700" : "text-blue-700"
+            }`}>
+              {isSuperAdmin 
+                ? "Platform-level administration. You can manage all colleges, view system-wide statistics, and access all features."
+                : "All data shown is scoped to your college. You can only view and manage users, posts, events, and content within your institution."
+              }
             </p>
           </div>
         </div>
@@ -172,7 +208,10 @@ export default function DashboardPage() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
         <p className="text-gray-600 mt-1">
-          Welcome to your college community admin dashboard
+          {isSuperAdmin 
+            ? "Welcome to the platform administration dashboard"
+            : "Welcome to your college community admin dashboard"
+          }
         </p>
       </div>
 

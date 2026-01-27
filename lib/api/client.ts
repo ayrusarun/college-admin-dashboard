@@ -380,6 +380,20 @@ export const alertApi = {
   ) => apiClient.post(`/alerts/post-alerts/${postId}`, data),
 };
 
+// ==================== COLLEGE API (SUPER ADMIN) ====================
+export const collegeApi = {
+  list: () => apiClient.get("/colleges/"),
+
+  getById: (id: number) => apiClient.get(`/colleges/${id}`),
+
+  create: (data: any) => apiClient.post("/colleges/", data),
+
+  update: (id: number, data: any) => apiClient.put(`/colleges/${id}`, data),
+
+  delete: (id: number, force: boolean = false) => 
+    apiClient.delete(`/colleges/${id}`, { params: { force } }),
+};
+
 // ==================== AI API ====================
 export const aiApi = {
   // Ask AI a question
