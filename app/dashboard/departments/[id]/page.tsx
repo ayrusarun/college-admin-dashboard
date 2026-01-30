@@ -110,20 +110,11 @@ export default function DepartmentDetailPage() {
       ),
     },
     {
-      key: "program_id",
-      label: "Program",
+      key: "role",
+      label: "Role",
       render: (user: User) => (
-        <span className="text-sm text-gray-900">
-          {user.program_id ? getProgramName(user.program_id) : "-"}
-        </span>
-      ),
-    },
-    {
-      key: "cohort_id",
-      label: "Cohort",
-      render: (user: User) => (
-        <span className="text-sm text-gray-900">
-          {user.cohort_id ? getCohortName(user.cohort_id) : "-"}
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          {user.role}
         </span>
       ),
     },
