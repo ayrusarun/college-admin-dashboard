@@ -39,9 +39,9 @@ interface RecentUser {
 interface UpcomingEvent {
   id: number;
   title: string;
-  start_time: string;
-  end_time: string;
-  location: string;
+  event_start_time: string;
+  event_end_time: string;
+  venue_location?: string;
   status: string;
 }
 
@@ -105,8 +105,8 @@ export default function DashboardPage() {
       const events = eventsRes.data || [];
       const now = new Date();
       const upcoming = events
-        .filter((event: any) => new Date(event.start_time) >= now && event.status !== 'cancelled')
-        .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        .filter((event: any) => new Date(event.event_start_time) >= now && event.status !== 'cancelled' && !event.is_deleted)
+        .sort((a: any, b: any) => new Date(a.event_start_time).getTime() - new Date(b.event_start_time).getTime())
         .slice(0, 5);
       setUpcomingEvents(upcoming);
 
@@ -345,10 +345,10 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {format(new Date(event.start_time), 'MMM d, yyyy h:mm a')}
+                        {format(new Date(event.event_start_time), 'MMM d, yyyy h:mm a')}
                       </p>
-                      {event.location && (
-                        <p className="text-xs text-gray-500 truncate">📍 {event.location}</p>
+                      {event.venue_location && (
+                        <p className="text-xs text-gray-500 truncate">📍 {event.venue_location}</p>
                       )}
                     </div>
                   </div>
