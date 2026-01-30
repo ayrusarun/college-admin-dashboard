@@ -397,7 +397,7 @@ export default function CreateUserPage() {
                       <option value="">Select Class</option>
                       {classes.map((cls) => (
                         <option key={cls.id} value={cls.id}>
-                          {cls.name}
+                          {cls.section_name || cls.section_code}
                         </option>
                       ))}
                     </select>
