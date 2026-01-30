@@ -21,6 +21,7 @@ export default function AlertsPage() {
   const [readFilter, setReadFilter] = useState<string>("ALL"); // ALL, READ, UNREAD
   const [includeExpired, setIncludeExpired] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"received" | "created">("received"); // Toggle between received and created alerts
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -54,7 +55,7 @@ export default function AlertsPage() {
   useEffect(() => {
     fetchAlerts();
     fetchGroups();
-  }, [page, selectedType, readFilter, includeExpired]);
+  }, [page, selectedType, readFilter, includeExpired, viewMode]);
 
   // Debounce user search
   useEffect(() => {
@@ -117,6 +118,7 @@ export default function AlertsPage() {
         skip: (page - 1) * pageSize,
         limit: pageSize,
         include_expired: includeExpired,
+        show_created: viewMode === "created", // Show created alerts if in created mode
       };
 
       if (selectedType !== "ALL") {
@@ -185,14 +187,31 @@ export default function AlertsPage() {
     e.preventDefault();
     
     try {
-      await alertApi.createAlert({
-        title: formData.title,
-        message: formData.message,
-        alert_type: formData.alert_type,
-        expires_at: formData.expires_at || undefined,
-        user_id: formData.user_id,
-        target_group_id: formData.target_group_id,
-      });
+      // If target_group_id is provided, use group alert endpoint
+      if (formData.target_group_id) {
+        await alertApi.createGroupAlert({
+          title: formData.title,
+          message: formData.message,
+          alert_type: formData.alert_type,
+          expires_at: formData.expires_at || undefined,
+          target_group_id: formData.target_group_id,
+        });
+        alert("Group alert created successfully!");
+      } else if (formData.user_id) {
+        // Individual user alert
+        await alertApi.createAlert({
+          title: formData.title,
+          message: formData.message,
+          alert_type: formData.alert_type,
+          expires_at: formData.expires_at || undefined,
+          user_id: formData.user_id,
+        });
+        alert("Alert created successfully!");
+      } else {
+        alert("Please select either a user or a group");
+        return;
+      }
+      
       setShowCreateModal(false);
       resetForm();
       fetchAlerts();
@@ -252,16 +271,40 @@ export default function AlertsPage() {
         <div>
           <h1 className="text-2xl font-bold">Alerts</h1>
           <p className="text-gray-600">
-            {unreadCount > 0 && (
+            {viewMode === "received" && unreadCount > 0 && (
               <span className="text-red-600 font-semibold">
                 {unreadCount} unread
               </span>
             )}
-            {unreadCount === 0 && <span>No unread alerts</span>}
+            {viewMode === "received" && unreadCount === 0 && <span>No unread alerts</span>}
+            {viewMode === "created" && <span>Alerts you created</span>}
           </p>
         </div>
         <div className="flex gap-2">
-          {unreadCount > 0 && (
+          {/* Toggle between received and created */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("received")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === "received"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Received
+            </button>
+            <button
+              onClick={() => setViewMode("created")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === "created"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Created by Me
+            </button>
+          </div>
+          {viewMode === "received" && unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
