@@ -78,10 +78,10 @@ export default function ClassesTab() {
         {classes.map((cls) => (
           <div key={cls.id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
             <h4 className="font-semibold text-gray-900 text-center text-lg">
-              {cls.name}
+              {cls.section_name || cls.section_code}
             </h4>
             <p className="text-sm text-gray-500 text-center font-mono">
-              Section: {cls.section}
+              Section: {cls.section_code}
             </p>
             <div className="mt-3 pt-3 border-t border-gray-100">
               <p className="text-xs text-gray-500 text-center">
@@ -116,8 +116,8 @@ function CreateClassModal({
   onSuccess: () => void;
 }) {
   const [formData, setFormData] = useState({
-    name: "",
-    section: "",
+    section_code: "",
+    section_name: "",
     cohort_id: "",
   });
   const [loading, setLoading] = useState(false);
@@ -145,32 +145,31 @@ function CreateClassModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Class Name *
+              Section Code *
             </label>
             <input
               type="text"
               required
-              value={formData.name}
+              value={formData.section_code}
               onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+                setFormData({ ...formData, section_code: e.target.value.toUpperCase() })
               }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="CS 2024 Section A"
+              placeholder="A"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Section *
+              Section Name (Optional)
             </label>
             <input
               type="text"
-              required
-              value={formData.section}
+              value={formData.section_name}
               onChange={(e) =>
-                setFormData({ ...formData, section: e.target.value.toUpperCase() })
+                setFormData({ ...formData, section_name: e.target.value })
               }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="A"
+              placeholder="CS 2024 Section A"
             />
           </div>
           <div>
