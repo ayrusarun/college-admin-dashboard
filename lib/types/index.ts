@@ -123,10 +123,13 @@ export interface Class {
   id: number;
   college_id: number;
   cohort_id: number;
-  section: string;
-  name: string;
-  class_teacher_id?: number;
+  program_id: number;
+  section_code: string;
+  section_name?: string;
+  capacity?: number;
   is_active: boolean;
+  class_teacher_id?: number;
+  current_strength?: number;
   created_at: string;
   updated_at: string;
 }

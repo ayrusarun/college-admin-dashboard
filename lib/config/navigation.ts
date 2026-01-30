@@ -64,15 +64,15 @@ export const navigationConfig: NavigationItem[] = [
     icon: Building2,
     implemented: true,
     allowedRoles: ["admin", "super_admin"], // Admin and super admin can manage departments
-    description: "Manage departments",
+    description: "Manage departments, programs, cohorts & classes",
   },
   {
-    name: "Academic",
+    name: "Academic Years",
     href: "/dashboard/academic",
     icon: GraduationCap,
     implemented: true,
-    allowedRoles: ["admin", "staff", "super_admin"], // All can access academic management
-    description: "Academic years, programs, cohorts",
+    allowedRoles: ["admin", "super_admin"], // Only admins can manage academic years
+    description: "Manage academic years",
   },
   {
     name: "Posts",

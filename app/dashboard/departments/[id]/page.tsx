@@ -10,21 +10,13 @@ import {
   BookOpen,
   Grid3x3,
   RefreshCw,
-  Edit,
-  Calendar,
 } from "lucide-react";
 import { departmentApi, academicApi, userApi } from "@/lib/api/client";
-import { Department, Program, Cohort, User } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { Department, Program, Cohort, Class, User } from "@/lib/types";
 import { DataTable } from "@/components/ui/DataTable";
-
-interface Class {
-  id: number;
-  cohort_id: number;
-  section_code: string;
-  section_name: string;
-  created_at: string;
-}
+import DepartmentProgramsTab from "@/components/departments/DepartmentProgramsTab";
+import DepartmentCohortsTab from "@/components/departments/DepartmentCohortsTab";
+import DepartmentClassesTab from "@/components/departments/DepartmentClassesTab";
 
 export default function DepartmentDetailPage() {
   const router = useRouter();
@@ -95,14 +87,6 @@ export default function DepartmentDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getProgramName = (programId: number) => {
-    return programs.find(p => p.id === programId)?.name || "Unknown";
-  };
-
-  const getCohortName = (cohortId: number) => {
-    return cohorts.find(c => c.id === cohortId)?.name || "Unknown";
   };
 
   const studentColumns = [
@@ -336,97 +320,32 @@ export default function DepartmentDetailPage() {
       {/* Tab Content */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         {activeTab === "programs" && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Programs</h3>
-            {programs.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No programs found</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {programs.map((program) => (
-                  <div
-                    key={program.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{program.name}</h4>
-                        <p className="text-sm text-gray-500 mt-1">{program.code}</p>
-                        {program.description && (
-                          <p className="text-sm text-gray-600 mt-2">{program.description}</p>
-                        )}
-                        <div className="mt-3 flex items-center text-xs text-gray-500">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Duration: {program.duration_years} years
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DepartmentProgramsTab
+            programs={programs}
+            departmentId={departmentId}
+            collegeId={department.college_id}
+            onRefresh={loadDepartmentData}
+          />
         )}
 
         {activeTab === "cohorts" && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cohorts</h3>
-            {cohorts.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No cohorts found</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cohorts.map((cohort) => (
-                  <div
-                    key={cohort.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <h4 className="font-semibold text-gray-900">{cohort.name}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{cohort.code}</p>
-                    <div className="mt-3 space-y-1">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="font-medium">Program:</span>
-                        <span className="ml-2">{getProgramName(cohort.program_id)}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="font-medium">Admission Year:</span>
-                        <span className="ml-2">{cohort.admission_year}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="font-medium">Current Semester:</span>
-                        <span className="ml-2">{cohort.current_semester}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DepartmentCohortsTab
+            cohorts={cohorts}
+            programs={programs}
+            departmentId={departmentId}
+            collegeId={department.college_id}
+            onRefresh={loadDepartmentData}
+          />
         )}
 
         {activeTab === "classes" && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Classes</h3>
-            {classes.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No classes found</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {classes.map((cls) => (
-                  <div
-                    key={cls.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <h4 className="font-semibold text-gray-900">{cls.section_name}</h4>
-                    <p className="text-sm text-gray-500 mt-1">Section: {cls.section_code}</p>
-                    <div className="mt-3">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Cohort:</span>
-                        <span className="ml-2">{getCohortName(cls.cohort_id)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DepartmentClassesTab
+            classes={classes}
+            cohorts={cohorts}
+            departmentId={departmentId}
+            collegeId={department.college_id}
+            onRefresh={loadDepartmentData}
+          />
         )}
 
         {activeTab === "students" && (
