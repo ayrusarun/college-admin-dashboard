@@ -87,6 +87,14 @@ export const postApi = {
     return response.data;
   },
 
+  /**
+   * Delete a post (soft delete - sets is_active to false)
+   * Only author or admin/staff with manage:posts permission can delete
+   */
+  async delete(postId: number): Promise<void> {
+    await apiClient.delete(`/posts/${postId}`);
+  },
+
   // ============================================
   // COMMENT OPERATIONS
   // ============================================

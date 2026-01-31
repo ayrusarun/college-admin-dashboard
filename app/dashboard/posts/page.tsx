@@ -9,7 +9,7 @@ import {
 import { postApi } from '@/lib/api/posts';
 import { groupApi } from '@/lib/api/client';
 import { aiApi } from '@/lib/api/ai';
-import type { PostEngagementResponse, PostType, PostCreate } from '@/lib/types/posts';
+import type { PostEngagementResponse, PostType, PostCreate, PostUpdate } from '@/lib/types/posts';
 import { POST_TYPE_OPTIONS } from '@/lib/types/posts';
 import type { Group } from '@/lib/types';
 import { REWRITE_STYLES, REWRITE_TONES } from '@/lib/types/ai';
@@ -60,6 +60,26 @@ export default function PostsPage() {
   // Detail modal
   const [selectedPost, setSelectedPost] = useState<PostEngagementResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<PostEngagementResponse | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [editFormData, setEditFormData] = useState<PostUpdate>({
+    title: '',
+    content: '',
+    image_url: null,
+    post_type: 'GENERAL',
+    target_group_id: null,
+  });
+
+  // Delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingPost, setDeletingPost] = useState<PostEngagementResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Action menu
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   // Pagination
   const [skip, setSkip] = useState(0);
@@ -269,6 +289,65 @@ export default function PostsPage() {
     setImagePreview(null);
   };
 
+  const handleEditPost = (post: PostEngagementResponse) => {
+    setEditingPost(post);
+    setEditFormData({
+      title: post.title,
+      content: post.content,
+      image_url: post.image_url,
+      post_type: post.post_type,
+      target_group_id: post.target_group_id,
+    });
+    setImagePreview(post.image_url);
+    setShowEditModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+    
+    if (!editFormData.title?.trim() || !editFormData.content?.trim()) {
+      alert('Title and content are required');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const updated = await postApi.update(editingPost.id, editFormData);
+      setPosts(posts.map(p => p.id === editingPost.id ? { ...p, ...updated } as PostEngagementResponse : p));
+      setShowEditModal(false);
+      setEditingPost(null);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      alert('Failed to update post');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!deletingPost) return;
+
+    try {
+      setDeleting(true);
+      await postApi.delete(deletingPost.id);
+      setPosts(posts.filter(p => p.id !== deletingPost.id));
+      setShowDeleteConfirm(false);
+      setDeletingPost(null);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openDeleteConfirm = (post: PostEngagementResponse) => {
+    setDeletingPost(post);
+    setShowDeleteConfirm(true);
+    setOpenMenuId(null);
+  };
+
   const filteredPosts = posts.filter(post => {
     const matchesType = !selectedType || post.post_type === selectedType;
     const matchesGroup = !selectedGroupId || post.target_group_id === selectedGroupId;
@@ -436,9 +515,51 @@ export default function PostsPage() {
                     </div>
 
                     {/* Actions Menu */}
-                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                    <div className="relative">
+                      <button 
+                        onClick={() => setOpenMenuId(openMenuId === post.id ? null : post.id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {openMenuId === post.id && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-20">
+                            <button
+                              onClick={() => {
+                                setSelectedPost(post);
+                                setShowDetailModal(true);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => handleEditPost(post)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                              Edit Post
+                            </button>
+                            <button
+                              onClick={() => openDeleteConfirm(post)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete Post
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Post Content */}
@@ -937,6 +1058,219 @@ export default function PostsPage() {
                   <CheckCircle2 className="w-4 h-4" />
                   Apply AI Rewrite
                 </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Post Modal */}
+      {showEditModal && editingPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Edit2 className="w-5 h-5" />
+                </div>
+                <h2 className="text-xl font-semibold tracking-tight">Edit Post</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingPost(null);
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-semibold tracking-tight text-gray-900 mb-2">
+                  Post Title
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                  placeholder="Enter a catchy title..."
+                  className="w-full px-4 py-3 text-base font-normal border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm font-semibold tracking-tight text-gray-900 mb-2">
+                  Content
+                </label>
+                <textarea
+                  value={editFormData.content}
+                  onChange={(e) => setEditFormData({ ...editFormData, content: e.target.value })}
+                  placeholder="Share your thoughts..."
+                  rows={6}
+                  className="w-full px-4 py-3 text-base font-normal leading-relaxed border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              {/* Post Type */}
+              <div>
+                <label className="block text-sm font-semibold tracking-tight text-gray-900 mb-2">
+                  Post Type
+                </label>
+                <select
+                  value={editFormData.post_type}
+                  onChange={(e) => setEditFormData({ ...editFormData, post_type: e.target.value as PostType })}
+                  className="w-full px-4 py-3 text-base font-normal border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  {POST_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.icon} {option.label} - {option.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Target Group */}
+              <div>
+                <label className="block text-sm font-semibold tracking-tight text-gray-900 mb-2">
+                  Target Group (Optional)
+                </label>
+                <select
+                  value={editFormData.target_group_id || ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, target_group_id: e.target.value ? Number(e.target.value) : null })}
+                  className="w-full px-4 py-3 text-base font-normal border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Public (All users)</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name} ({group.group_type})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-600 mt-2">
+                  Select a group to target this post, or leave as public
+                </p>
+              </div>
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-xl"
+                  />
+                  <button
+                    onClick={() => {
+                      setEditFormData({ ...editFormData, image_url: null });
+                      setImagePreview(null);
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Image Upload */}
+              {!imagePreview && (
+                <div>
+                  <label className="block text-sm font-semibold tracking-tight text-gray-900 mb-2">
+                    Image (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                  {uploadingImage && (
+                    <p className="text-sm text-indigo-600 mt-2">Uploading...</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3 rounded-b-2xl border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingPost(null);
+                }}
+                className="px-5 py-2.5 text-sm font-semibold tracking-tight text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdatePost}
+                disabled={updating}
+                className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-semibold tracking-tight rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+              >
+                {updating ? 'Updating...' : 'Update Post'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && deletingPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <h2 className="text-xl font-semibold tracking-tight">Delete Post</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingPost(null);
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to delete this post? This action cannot be undone.
+              </p>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-900 mb-2">{deletingPost.title}</h3>
+                <p className="text-sm text-gray-600 line-clamp-2">{deletingPost.content}</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3 rounded-b-2xl border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingPost(null);
+                }}
+                className="px-5 py-2.5 text-sm font-semibold tracking-tight text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletePost}
+                disabled={deleting}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white text-sm font-semibold tracking-tight rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete Post'}
               </button>
             </div>
           </div>
