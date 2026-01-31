@@ -36,25 +36,25 @@ export function ConfirmDialog({
   const confirmBgColor = variant === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-yellow-600 hover:bg-yellow-700";
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <div className={`flex items-center justify-center w-12 h-12 rounded-full ${iconBgColor} mx-auto mb-4`}>
-          <Icon className={`h-6 w-6 ${iconColor}`} />
+    <div className="fixed inset-0 bg-white bg-opacity-10 backdrop-blur-lg flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+        <div className={`flex items-center justify-center w-16 h-16 rounded-full ${iconBgColor} mx-auto mb-6`}>
+          <Icon className={`h-8 w-8 ${iconColor}`} />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+        <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
           {title}
         </h3>
-        <p className="text-sm text-gray-600 text-center mb-6" dangerouslySetInnerHTML={{ __html: message }} />
-        <div className="flex space-x-3">
+        <p className="text-base text-gray-600 text-center mb-8 leading-relaxed" dangerouslySetInnerHTML={{ __html: message }} />
+        <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-base"
           >
             {cancelText}
           </button>
           <button
             onClick={handleConfirm}
-            className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors font-medium ${confirmBgColor}`}
+            className={`flex-1 px-6 py-3 text-white rounded-xl transition-colors font-semibold text-base shadow-lg ${confirmBgColor}`}
           >
             {confirmText}
           </button>

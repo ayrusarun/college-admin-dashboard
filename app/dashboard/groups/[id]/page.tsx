@@ -20,10 +20,12 @@ import {
 import { groupApi, userApi, alertApi } from "@/lib/api/client";
 import { GroupWithMembers, MemberInfo, GroupRole, User, AlertType } from "@/lib/types";
 import { Modal } from "@/components/Modal";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function GroupDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const groupId = parseInt(params.id as string);
 
   const [group, setGroup] = useState<GroupWithMembers | null>(null);
@@ -216,8 +218,18 @@ export default function GroupDetailPage() {
     }
   };
 
-  const canManageMembers = group?.my_role === "OWNER" || group?.my_role === "ADMIN";
-  const canEditRoles = group?.my_role === "OWNER" || group?.my_role === "ADMIN";
+  // System admins and staff can manage all groups, or group OWNER/ADMIN
+  const canManageMembers = 
+    user?.role === "admin" || 
+    user?.role === "staff" || 
+    group?.my_role === "OWNER" || 
+    group?.my_role === "ADMIN";
+  
+  const canEditRoles = 
+    user?.role === "admin" || 
+    user?.role === "staff" || 
+    group?.my_role === "OWNER" || 
+    group?.my_role === "ADMIN";
 
   if (loading) {
     return (
@@ -519,7 +531,9 @@ export default function GroupDetailPage() {
             >
               <option value="MEMBER">Member</option>
               <option value="MODERATOR">Moderator</option>
-              {group.my_role === "OWNER" && <option value="ADMIN">Admin</option>}
+              {(user?.role === "admin" || user?.role === "staff" || group.my_role === "OWNER") && (
+                <option value="ADMIN">Admin</option>
+              )}
             </select>
           </div>
 
@@ -573,7 +587,9 @@ export default function GroupDetailPage() {
             >
               <option value="MEMBER">Member</option>
               <option value="MODERATOR">Moderator</option>
-              {group.my_role === "OWNER" && <option value="ADMIN">Admin</option>}
+              {(user?.role === "admin" || user?.role === "staff" || group.my_role === "OWNER") && (
+                <option value="ADMIN">Admin</option>
+              )}
             </select>
           </div>
 

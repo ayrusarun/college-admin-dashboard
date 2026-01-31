@@ -19,9 +19,11 @@ import { groupApi } from "@/lib/api/client";
 import { Group, GroupType } from "@/lib/types";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function GroupsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -137,6 +139,26 @@ export default function GroupsPage() {
       requires_approval: false,
       allowed_post_roles: ["OWNER", "ADMIN", "MODERATOR"],
     });
+  };
+
+  // Helper function to check if user can edit/manage a group
+  const canManageGroup = (group: Group): boolean => {
+    // System admins and staff can manage all groups
+    if (user?.role === "admin" || user?.role === "staff") {
+      return true;
+    }
+    // Group owners and admins can manage their groups
+    return group.my_role === "OWNER" || group.my_role === "ADMIN";
+  };
+
+  // Helper function to check if user can delete a group
+  const canDeleteGroup = (group: Group): boolean => {
+    // System admins and staff can delete non-academic groups
+    if (user?.role === "admin" || user?.role === "staff") {
+      return group.group_type !== "ACADEMIC";
+    }
+    // Only group owners can delete, and not academic groups
+    return group.my_role === "OWNER" && group.group_type !== "ACADEMIC";
   };
 
   const filteredGroups = groups.filter((group) => {
@@ -328,7 +350,7 @@ export default function GroupsPage() {
                     <Eye className="w-4 h-4" />
                     View
                   </button>
-                  {(group.my_role === "OWNER" || group.my_role === "ADMIN") && (
+                  {canManageGroup(group) && (
                     <>
                       <button
                         onClick={() => router.push(`/dashboard/groups/${group.id}`)}
@@ -343,7 +365,7 @@ export default function GroupsPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      {group.my_role === "OWNER" && group.group_type !== "ACADEMIC" && (
+                      {canDeleteGroup(group) && (
                         <button
                           onClick={() => openDeleteModal(group)}
                           className="flex items-center justify-center gap-2 px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
@@ -371,23 +393,23 @@ export default function GroupsPage() {
         }}
         title={showCreateModal ? "Create New Group" : "Edit Group"}
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
               Group Name *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
               placeholder="Enter group name"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
               Group Type *
             </label>
             <select
@@ -395,7 +417,7 @@ export default function GroupsPage() {
               onChange={(e) =>
                 setFormData({ ...formData, group_type: e.target.value as GroupType })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow disabled:bg-gray-50 disabled:text-gray-500"
               disabled={showEditModal}
             >
               <option value="ACADEMIC">Academic</option>
@@ -404,12 +426,12 @@ export default function GroupsPage() {
               <option value="CUSTOM">Custom</option>
             </select>
             {showEditModal && (
-              <p className="text-xs text-gray-500 mt-1">Group type cannot be changed</p>
+              <p className="text-xs text-gray-500 mt-2">Group type cannot be changed</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
               Description
             </label>
             <textarea
@@ -417,7 +439,7 @@ export default function GroupsPage() {
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow resize-none"
               rows={3}
               placeholder="Enter group description"
             />
@@ -425,20 +447,20 @@ export default function GroupsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Logo URL
               </label>
               <input
                 type="text"
                 value={formData.logo}
                 onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/logo.png"
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                placeholder="https://example.com/logo"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
                 Banner URL
               </label>
               <input
@@ -447,36 +469,36 @@ export default function GroupsPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, banner_url: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/banner.png"
+                className="w-full px-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                placeholder="https://example.com/banner"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 pt-2">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.is_open}
                 onChange={(e) =>
                   setFormData({ ...formData, is_open: e.target.checked })
                 }
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded-md focus:ring-blue-500 cursor-pointer"
               />
-              <span className="text-sm text-gray-700">Open for anyone to join</span>
+              <span className="text-base text-gray-900 select-none">Open for anyone to join</span>
             </label>
 
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.requires_approval}
                 onChange={(e) =>
                   setFormData({ ...formData, requires_approval: e.target.checked })
                 }
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded-md focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!formData.is_open}
               />
-              <span className="text-sm text-gray-700">Requires approval</span>
+              <span className={`text-base select-none ${!formData.is_open ? 'text-gray-400' : 'text-gray-900'}`}>Requires approval</span>
             </label>
           </div>
 
@@ -488,14 +510,14 @@ export default function GroupsPage() {
                 setSelectedGroup(null);
                 resetForm();
               }}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-6 py-3 text-base font-medium border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={showCreateModal ? handleCreate : handleEdit}
               disabled={!formData.name || !formData.group_type}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 text-base font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
             >
               {showCreateModal ? "Create Group" : "Save Changes"}
             </button>
