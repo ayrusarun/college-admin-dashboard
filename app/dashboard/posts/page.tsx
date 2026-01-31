@@ -1096,7 +1096,7 @@ export default function PostsPage() {
                 </label>
                 <input
                   type="text"
-                  value={editFormData.title}
+                  value={editFormData.title ?? ''}
                   onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
                   placeholder="Enter a catchy title..."
                   className="w-full px-4 py-3 text-base font-normal border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -1109,7 +1109,7 @@ export default function PostsPage() {
                   Content
                 </label>
                 <textarea
-                  value={editFormData.content}
+                  value={editFormData.content ?? ''}
                   onChange={(e) => setEditFormData({ ...editFormData, content: e.target.value })}
                   placeholder="Share your thoughts..."
                   rows={6}
@@ -1123,7 +1123,7 @@ export default function PostsPage() {
                   Post Type
                 </label>
                 <select
-                  value={editFormData.post_type}
+                  value={editFormData.post_type ?? 'GENERAL'}
                   onChange={(e) => setEditFormData({ ...editFormData, post_type: e.target.value as PostType })}
                   className="w-full px-4 py-3 text-base font-normal border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
