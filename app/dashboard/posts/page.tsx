@@ -294,11 +294,11 @@ export default function PostsPage() {
     setEditFormData({
       title: post.title,
       content: post.content,
-      image_url: post.image_url,
+      image_url: post.image_url ?? null,
       post_type: post.post_type,
-      target_group_id: post.target_group_id,
+      target_group_id: post.target_group_id ?? null,
     });
-    setImagePreview(post.image_url);
+    setImagePreview(post.image_url ?? null);
     setShowEditModal(true);
     setOpenMenuId(null);
   };
