@@ -1129,7 +1129,7 @@ export default function PostsPage() {
                 >
                   {POST_TYPE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.icon} {option.label} - {option.description}
+                      {option.icon} {option.label}
                     </option>
                   ))}
                 </select>
